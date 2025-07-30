@@ -23,6 +23,7 @@ class NetworkMapper:
                 ...
             }
         """
+        self.current_os_name = self.get_os_name()
 
     @staticmethod
     def get_os_name() -> str:
@@ -31,23 +32,23 @@ class NetworkMapper:
         """
         return platform.system()  # Tested on Linux (debian Distributions) and Windows
 
-    def get_all_arp_entries(self, os_name: str) -> str or Exception:
+    def get_all_arp_entries(self) -> str or Exception:
         try:
-            return subprocess.run(commands_mapper.cmd_map[os_name]['get_arps'], stdout=subprocess.PIPE,
+            return subprocess.run(commands_mapper.cmd_map[self.current_os_name]['get_arps'], stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE, text=True).stdout
         except subprocess.CalledProcessError as e:
             return f"Error: {e}"
 
-    def parse_arp_entries(self, arp_entries: str, os_name: str) -> str:
+    def parse_arp_entries(self, arp_entries: str) -> str:
         """
         We will be using the two helping functions for Linux And Windows
         :param arp_entries:
         :return:
         """
-        if os_name not in commands_mapper.cmd_map:
-            return f"{os_name} is not Supported"
+        if self.current_os_name not in commands_mapper.cmd_map:
+            return f"{self.current_os_name} is not Supported"
 
-        parser_function = commands_mapper.cmd_map[os_name]["parser_function"]
+        parser_function = commands_mapper.cmd_map[self.current_os_name]["parser_function"]
         parser_f = getattr(self, parser_function)
         return parser_f(arp_entries)
 
@@ -67,7 +68,7 @@ class NetworkMapper:
             for m in matches:
                 ip = m[0]
                 mac = m[4] if m[4] else 'No Mac'
-                if current_net_interface:
+                if current_net_interface and self.check_if_is_active(ip):
                     self.arp_entries[current_net_interface][mac] = ip
         return current_net_interface
 
@@ -83,13 +84,21 @@ class NetworkMapper:
 
             if current_net_interface not in self.arp_entries and current_net_interface != '':
                 self.arp_entries[current_net_interface] = {}
-            self.arp_entries[current_net_interface][mac] = ip
+            if self.check_if_is_active(ip):
+                self.arp_entries[current_net_interface][mac] = ip
         return current_net_interface
 
+    def check_if_is_active(self, ip: str) -> bool:
+        ping_cmd = commands_mapper.cmd_map[self.current_os_name]['pinger'] + [ip]
+        print(f"Now trying: {ip}")
+        result = subprocess.run(ping_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        return result.returncode == 0
+
     def main(self) -> None:
-        all_arps = self.get_all_arp_entries(self.get_os_name())
-        self.parse_arp_entries(all_arps, self.get_os_name())
+        all_arps = self.get_all_arp_entries()
+        self.parse_arp_entries(all_arps)
         print(f'Final entries dict is: {self.arp_entries}')
+
 
 
 if __name__ == '__main__':

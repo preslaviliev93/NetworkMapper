@@ -1,4 +1,4 @@
-# Dynamic Network Mapper with History
+# Dynamic Network Mapper
 
 ## Work in progress ##
 
@@ -8,8 +8,8 @@ Scans network devices, logs changes over time, and visualizes network topology.
 
 ## Features
 - ARP/ICMP scan to find active devices.
-- Detects when new devices join or leave.
-- Generates historical change logs and a graph of the network.
+- Maps IP-MAC to NIC
+- Creates current state network diagram (in progress)
 
-## Value
+## Who is intended to use it
 Helps sysadmins monitor networks without expensive tools.

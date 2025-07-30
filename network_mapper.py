@@ -90,9 +90,13 @@ class NetworkMapper:
 
     def check_if_is_active(self, ip: str) -> bool:
         ping_cmd = commands_mapper.cmd_map[self.current_os_name]['pinger'] + [ip]
-        print(f"Now trying: {ip}")
+        print(f"Checking if {ip} is active...")
         result = subprocess.run(ping_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         return result.returncode == 0
+
+
+    def get_vendor_by_mac(self, mac: str) -> str:
+        ...
 
     def main(self) -> None:
         all_arps = self.get_all_arp_entries()
